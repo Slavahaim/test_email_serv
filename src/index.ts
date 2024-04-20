@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from 'body-parser';
+import userRoutes from './routes/user.routes';
+import emailRoutes from './routes/email.routes';
 
 dotenv.config();
 
@@ -16,6 +18,8 @@ app.get('/', async (req: Request, res: Response) => {
   });
 });
 
+app.use('/api', userRoutes);
+app.use('/api', emailRoutes);
 
 const start = async () => {
   try {
