@@ -1,19 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 
-const router = Router();
+const router = Router(); // Создаем новый экземпляр маршрутизатора Express
 
-// POST - users registration
-router.post('/user/register', async (req: Request, res: Response) => {
-    // TO DO
-    const result : string = '/user/register';
-    res.status(200).json({ users: result });
-});
+import { register, login } from '../controllers/user.controllers'; // Импортируем функции-обработчики из контроллера пользователей
 
-// POST - users authorization
-router.post('/user/login', async (req: Request, res: Response) => {
-    // TO DO
-    const result : string = '/user/login';
-    res.status(200).json({ user: result });
-});
+router.post('/user/register', register); // Маршрут для регистрации нового пользователя
+router.post('/user/login', login); // Маршрут для входа авторизации в системе
 
-export default router;
+export default router; // Экспортируем настроенный маршрутизатор для использования в приложении Express

@@ -1,33 +1,14 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 
-const router = Router();
+const router = Router(); // Создаем новый экземпляр маршрутизатора Expres
 
-// POST - email 
-router.post('/email/create', async (req: Request, res: Response) => {
-    // TO DO
-    const result : string = '/email/create';
-    res.status(201).json({ user: result });
-});
+// Импортируем функции-обработчики из контроллера
 
-// POST - email 
-router.get('/email/all', async (req: Request, res: Response) => {
-    // TO DO
-    const result : string = '/email/all';
-    res.status(201).json({ user: result });
-});
+import { getEmails, createEmail, updateEmail, deleteEmail } from '../controllers/email.controllers'; 
 
-// POST - email 
-router.put('/email/update', async (req: Request, res: Response) => {
-    // TO DO
-    const result : string = '/email/update';
-    res.status(201).json({ user: result });
-});
+router.get('/emails', getEmails); // Маршрут для получения всех электронных писем
+router.post('/emails', createEmail); // Маршрут для создания нового электронного письма
+router.put('/emails/:id', updateEmail); // Маршрут для обновления электронного письма по его идентификатору
+router.delete('/emails/:id', deleteEmail); // Маршрут для удаления электронного письма по его идентификатору
 
-// POST - email 
-router.delete('/email/delete', async (req: Request, res: Response) => {
-    // TO DO
-    const result : string = '/email/delete';
-    res.status(201).json({ user: result });
-});
-
-export default router;
+export default router; // Экспортируем настроенный маршрутизатор для использования в приложении Express
