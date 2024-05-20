@@ -3,10 +3,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const DB_HOST = process.env.DB_HOST
-const DB_USER = process.env.DB_USER
-const DB_PASSWORD = process.env.DB_PASSWORD
-const DB_NAME = process.env.DB_NAME
+const DB_HOST = String(process.env.DB_HOST)
+const DB_USER = String(process.env.DB_USER)
+const DB_PASSWORD = String(process.env.DB_PASSWORD)
+const DB_NAME = String(process.env.DB_NAME)
 const DB_PORT = Number(process.env.DB_PORT)
 
 export const pool = new Pool({

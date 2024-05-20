@@ -2,11 +2,34 @@ import { Request, Response } from 'express';
 import { pool } from '../database';
 import { QueryResult } from 'pg';
 import Joi from 'joi';
+import jwt from 'jsonwebtoken';
+import secret from './config';
+
+interface Email {
+    id?: number;
+    sender: string;
+    receiver: string;
+    subject: string;
+    content: string;
+}
+
+// Определение схемы валидации с помощью Joi
+const emailSchema = Joi.object({
+    sender: Joi.string().max(255).email().required(),
+    receiver: Joi.string().max(255).email().required(),
+    subject: Joi.string().max(255).allow(''), // subject может быть пустым
+    content: Joi.string().required(),
+    token: Joi.string().required(),
+});
 
 export const getEmails = async (req: Request, res: Response): Promise<Response> => {
     try {
+        
+        const { token } = req.body;
+
+        jwt.verify(token, secret);
         // Попытка выполнить запрос к базе данных для получения всех электронных писем
-        const response: QueryResult = await pool.query('SELECT * FROM emails ORDER BY id ASC');
+        const response: QueryResult<Email> = await pool.query('SELECT * FROM emails ORDER BY id ASC');
 
         // Возвращаем успешный ответ с данными о электронных письмах в формате JSON
         return res.status(200).json(response.rows);
@@ -18,30 +41,27 @@ export const getEmails = async (req: Request, res: Response): Promise<Response> 
     }
 };
 
-export const createEmail = async (req: Request, res: Response) => {
+export const createEmail = async (req: Request, res: Response): Promise<Response> => {
     try {
 
-        // Валидация входных данных
-        const emailSchema = Joi.object({
-            sender: Joi.string().max(255).email().required(),
-            receiver: Joi.string().max(255).email().required(),
-            subject: Joi.string().max(255).allow(''), // subject может быть пустым
-            content: Joi.string().required(),
-        });
-
-        const { error } = emailSchema.validate(req.body);
-
+        const { error, value } = emailSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ error: error.details[0].message });
         }
 
-        const { sender, receiver, subject , content } = req.body;
+        const { sender, receiver, subject , content, token } = value;
 
-        const response = await pool.query('INSERT INTO emails (sender, receiver, subject, content) VALUES ($1, $2, $3, $4)', [sender, receiver, subject , content]);
+        jwt.verify(token, secret);
+
+        const response: QueryResult<Email> = await pool.query(
+            'INSERT INTO emails (sender, receiver, subject, content) VALUES ($1, $2, $3, $4) RETURNING *',
+            [sender, receiver, subject , content]);
+
+        const created = response.rows[0];
 
         return res.json({
             message: 'Email Added successfully',
-            email: { sender, receiver, subject , content },
+            created
         })
     } catch (error) {
         console.error(error);
@@ -49,36 +69,56 @@ export const createEmail = async (req: Request, res: Response) => {
     }
 };
 
-export const updateEmail = async (req: Request, res: Response) => {
+export const updateEmail = async (req: Request, res: Response): Promise<Response> => {
     try {
 
         const id = parseInt(req.params.id);
 
-        const { sender, receiver, subject , content } = req.body;
+        const { error, value } = emailSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
 
-        const response = await pool.query('UPDATE emails SET sender = $1, receiver = $2, subject = $3, content = $4  WHERE id = $5', [
-            sender,
-            receiver,
-            subject,
-            content,
-            id
-        ]);
+        const { sender, receiver, subject , content, token } = value;
 
-        return res.json('Email Updated Successfully');
+        jwt.verify(token, secret);
+
+        const response: QueryResult = await pool.query(
+            'UPDATE emails SET sender = $1, receiver = $2, subject = $3, content = $4  WHERE id = $5 RETURNING *',
+            [
+                sender,
+                receiver,
+                subject,
+                content,
+                id
+            ]
+        );
+
+        return res.json({
+            message: 'Email updated successfully',
+            email: response.rows[0],
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json('Internal Server error');
     }
 };
 
-export const deleteEmail = async (req: Request, res: Response) => {
+export const deleteEmail = async (req: Request, res: Response): Promise<Response> => {
     try{
 
         const id = parseInt(req.params.id);
 
-        await pool.query('DELETE FROM emails where id = $1', [id]);
+        const { token } = req.body;
 
-        return res.json(`Email id: ${id} deleted Successfully`);
+        jwt.verify(token, secret);
+
+        const response: QueryResult = await pool.query('DELETE FROM emails where id = $1 RETURNING *', [id]);
+
+        return res.json({
+            message: `Email id: ${id} deleted successfully`,
+            email: response.rows[0],
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json('Internal Server error');
